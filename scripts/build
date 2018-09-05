@@ -6,3 +6,4 @@ cd $(dirname $0)
 ./build-gce
 ./build-aliyun
 ./build-cloudstack
+./build-vmware

@@ -3,6 +3,7 @@ FROM golang:1.9.7
 ARG PACKER_BOOT_WAIT=60s
 ARG RANCHEROS_VERSION
 ARG AWS_IMAGE_BUILD_NUMBER
+ARG RELEASE_BASE_URL=https://releases.rancher.com/os
 
 RUN go get github.com/hashicorp/packer
 
@@ -21,13 +22,10 @@ ENV AWS_IMAGE_BUILD_NUMBER ${AWS_IMAGE_BUILD_NUMBER:-1}
 ENV PACKER_BOOT_WAIT ${PACKER_BOOT_WAIT}
 
 COPY assets/* /
-RUN cd / \
-    && if [ ! -f /rancheros.iso ]; then \
-        wget https://releases.rancher.com/os/${RANCHEROS_VERSION}/rancheros.iso \
-    ;fi \
-    && if [ ! -f /iso-checksums.txt ]; then \
-        wget https://releases.rancher.com/os/${RANCHEROS_VERSION}/iso-checksums.txt \
-    ;fi
+RUN cd /; \
+	for asset in rancheros.iso rancheros-vmware.iso iso-checksums.txt vmware-iso-checksums.txt; do \
+		[ -f "$asset" ] || wget ${RELEASE_BASE_URL}/${RANCHEROS_VERSION}/$asset; \
+	done;
 
 ENTRYPOINT ["./scripts/entry"]
 CMD ["ci"]

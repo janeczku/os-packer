@@ -83,6 +83,17 @@ EOF
         exit 0
         ;;
 
+    "vmware")
+        cat >cloud-config.yml<<EOF
+#cloud-config
+rancher:
+  resize_device: /dev/sda
+EOF
+        echo "building vmware vmdk"
+        sudo ros install -d /dev/sda -c $(pwd)/cloud-config.yml --no-reboot --debug --append "console=tty1 console=ttyS0 rancher.autologin=tty1 rancher.autologin=ttyS0"
+        exit 0
+        ;;
+
 esac
 
 case ${PACKER_BUILDER_TYPE} in

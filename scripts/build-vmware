@@ -1,0 +1,30 @@
+#!/bin/bash
+
+cd $(dirname $0)/../vmware
+
+export ISO_CHECKSUM=$(cat /vmware-iso-checksums.txt | grep md5 | sed 's/md5: \(.*\)  rancheros-vmware.iso/\1/')
+
+PACKER_LOG=1  packer build ${FILE:-vmware-qemu.json}
+
+RANCHEROS_VERSION=${RANCHEROS_VERSION:-test}
+
+mv output-vmware/packer-vmware rancheros-vmware.raw
+
+# Create VMDK disk image
+qemu-img convert -f raw -O vmdk \
+  -o adapter_type=lsilogic,subformat=monolithicSparse,compat6 \
+  rancheros-vmware.raw rancheros-vmware.vmdk
+
+# TODO: Create OVA appliance
+# 1) Convert image to streamOptimized format: vmdk-convert rancheros-vmware.vmdk rancheros.vmdk
+# 2) Generate ovf file from a template
+# 3) Write ova bundle consisting of md, vmdk and ovf file
+
+mkdir -p ../dist
+mv rancheros-vmware.vmdk ../dist/
+
+echo "upload the VMware image using:"
+echo "  gsutil cp dist/rancheros-vmware.vmdk gs://releases.rancher.com/os/latest/rancheros-vmware.vmdk"
+echo "  gsutil cp dist/rancheros-vmware.vmdk gs://releases.rancher.com/os/${RANCHEROS_VERSION}/rancheros-vmware.vmdk"
+echo "upload the github release:"
+echo "  github-release upload  --user rancher --repo os --tag ${RANCHEROS_VERSION} --file dist/rancheros-vmware.vmdk --name rancheros-vmware.vmdk"
